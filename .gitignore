@@ -16,3 +16,4 @@ bin/
 .env
 /gin-bin
 **stub.txt
+**commands.txt
