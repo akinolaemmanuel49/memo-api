@@ -555,67 +555,14 @@ func (sh socialHandler) GetComments(ctx *gin.Context) {
 		return
 	}
 
+	returned := response.MultipleCommentResponseFromModel(comments)
+
 	// Return comments
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   comments,
+		"data":   returned,
 	})
 }
-
-//// GetComments retrieves all comments for a memo.
-//func (sh socialHandler) GetComments(ctx *gin.Context) {
-//	// Fetch authenticated user from context and return authentication error if no user exists
-//	user := helpers.ContextGetUser(ctx)
-//
-//	if reflect.DeepEqual(user, models.User{}) {
-//		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
-//		return
-//	}
-//
-//	// retrieve queries and params from URL
-//	memoID := ctx.Param("memoID")
-//
-//	pageStr := ctx.Query("page")
-//	pageSizeStr := ctx.Query("pageSize")
-//
-//	if pageStr == "" {
-//		pageStr = helpers.DefaultPage
-//	}
-//	if pageSizeStr == "" {
-//		pageSizeStr = helpers.DefaultPageSize
-//	}
-//
-//	// convert query strings to integers
-//	page, err := strconv.Atoi(pageStr)
-//	if err != nil {
-//		switch {
-//		default:
-//			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, err)
-//		}
-//		return
-//	}
-//	pageSize, err := strconv.Atoi(pageSizeStr)
-//	if err != nil {
-//		switch {
-//		default:
-//			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, err)
-//		}
-//		return
-//	}
-//
-//	// Fetch comments by memoID
-//	comments, err := sh.app.Repositories.Social.GetCommentsByMemoID(memoID, page, pageSize)
-//	if err != nil {
-//		helpers.HandleInternalServerError(ctx, err)
-//		return
-//	}
-//
-//	// Return comments
-//	ctx.JSON(http.StatusOK, gin.H{
-//		"status": "success",
-//		"data":   comments,
-//	})
-//}
 
 func (sh socialHandler) GetReplies(ctx *gin.Context) {
 	// Fetch authenticated user from context and return authentication error if no user exists
@@ -664,9 +611,11 @@ func (sh socialHandler) GetReplies(ctx *gin.Context) {
 		return
 	}
 
+	returned := response.MultipleCommentResponseFromModel(replies)
+
 	// Return comments
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   replies,
+		"data":   returned,
 	})
 }

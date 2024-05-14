@@ -37,11 +37,11 @@ func CommentResponseFromModel(comment models.Comment) Comment {
 	}
 }
 
-//func MultipleCommentResponseFromModel(memos []models.Memo) []Memo {
-//	var memoResponses []Memo
-//	for _, memo := range memos {
-//		memoResponse := MemoResponseFromModel(memo)
-//		memoResponses = append(memoResponses, memoResponse)
-//	}
-//	return memoResponses
-//}
+func MultipleCommentResponseFromModel(comments []models.Comment) []Comment {
+	var commentResponses []Comment
+	for _, comment := range comments {
+		commentResponse := CommentResponseFromModel(comment)
+		commentResponses = append(commentResponses, commentResponse)
+	}
+	return commentResponses
+}

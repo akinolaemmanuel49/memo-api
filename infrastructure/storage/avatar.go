@@ -77,10 +77,8 @@ func (f file) DeleteAvatar(userID string) error {
 	// attempt to delete storage with matching user ID
 	res, err := cld.Upload.Destroy(ctx,
 		uploader.DestroyParams{
-			PublicID:     userID,
-			Type:         TypeImage,
-			ResourceType: TypeImage,
-			Invalidate:   &Invalidate,
+			PublicID:   userID,
+			Invalidate: &Invalidate,
 		},
 	)
 	if err != nil {

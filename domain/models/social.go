@@ -28,7 +28,6 @@ type Comment struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Version     int
-	Replies     interface{}
 }
 
 type CommentParentChild struct {
