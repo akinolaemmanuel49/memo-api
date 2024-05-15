@@ -352,7 +352,7 @@ func (u user) GetUsersFollowedBy(id string, page, pageSize int) ([]models.User, 
 // repository.ErrDuplicateDetails is returned if at least the username or the email already exists in the database.
 // repository.ErrConcurrentUpdate is returned if multiple users attempt to update the same record at a time.
 func (u user) Update(id string, updatedUser models.User) (models.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), helpers.TimeoutDuration)
+	ctx, cancel := context.WithTimeout(context.Background(), helpers.UploadTimeoutDuration)
 	defer cancel()
 
 	// Query statements

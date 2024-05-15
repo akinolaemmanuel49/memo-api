@@ -27,7 +27,7 @@ func (m memo) CreateMemo(ownerID string, memo *models.Memo) (models.Memo, error)
 	RETURNING id, created_at, updated_at
 	`
 
-	ctx, cancel := context.WithTimeout(context.Background(), helpers.TimeoutDuration)
+	ctx, cancel := context.WithTimeout(context.Background(), helpers.UploadTimeoutDuration)
 	defer cancel()
 
 	newMemo := *memo
