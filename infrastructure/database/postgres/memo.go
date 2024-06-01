@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
+
 	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"github.com/akinolaemmanuel49/memo-api/domain/repository"
 	"github.com/akinolaemmanuel49/memo-api/internal/helpers"
-	"time"
 )
 
 type memo struct {
@@ -136,6 +137,7 @@ func (m memo) GetMemosByFollowing(userID string, page, pageSize int) ([]models.M
 		SELECT subject_id::uuid
 		FROM public.follow
 		WHERE follower_id = $1)
+		OR owner_id = $1
 	ORDER BY created_at DESC
 	LIMIT $2 OFFSET $3
 `
