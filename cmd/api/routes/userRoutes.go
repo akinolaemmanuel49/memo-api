@@ -16,6 +16,7 @@ func userRoutes(app internal.Application, routes *gin.Engine) {
 		user.GET("", userHandler.Get)
 		user.PUT("", userHandler.Update)
 		user.DELETE("", userHandler.Delete)
+		user.GET("/all", userHandler.GetAll)
 		user.GET("/followers", userHandler.GetFollowers)
 		user.GET("/following", userHandler.GetFollowing)
 		user.DELETE("/avatar", userHandler.DeleteAvatar)

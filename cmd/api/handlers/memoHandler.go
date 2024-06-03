@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"errors"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/models/response"
 	"net/http"
 	"reflect"
 	"strconv"
+
+	"github.com/akinolaemmanuel49/memo-api/memo/api/models/response"
 
 	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"github.com/akinolaemmanuel49/memo-api/domain/repository"
@@ -27,6 +28,7 @@ type MemoHandler interface {
 	UnlikeMemo(ctx *gin.Context)
 	ShareMemo(ctx *gin.Context)
 	UnshareMemo(ctx *gin.Context)
+	GetAllMemos(ctx *gin.Context)
 	GetSubscribedMemos(ctx *gin.Context)
 	GetMemosByOwnerID(ctx *gin.Context)
 	GetOwnMemos(ctx *gin.Context)
@@ -491,6 +493,59 @@ func (mh memoHandler) UnshareMemo(ctx *gin.Context) {
 			"message": "Unshare was successful.",
 		},
 	)
+}
+
+func (mh memoHandler) GetAllMemos(ctx *gin.Context) {
+	user := helpers.ContextGetUser(ctx)
+
+	if reflect.DeepEqual(user, models.User{}) {
+		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
+		return
+	}
+
+	// retrieve query params for pagination
+	pageStr := ctx.Query("page")
+	pageSizeStr := ctx.Query("pageSize")
+
+	if pageStr == "" {
+		pageStr = helpers.DefaultPage
+	}
+	if pageSizeStr == "" {
+		pageSizeStr = helpers.DefaultPageSize
+	}
+
+	// convert query strings to integers
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, err)
+		}
+		return
+	}
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, err)
+		}
+		return
+	}
+
+	// retrieve list of memos by followed users from the database
+	memos, err := mh.app.Repositories.Memo.GetAllMemos(page, pageSize)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleInternalServerError(ctx, err)
+		}
+		return
+	}
+
+	// return fetched memos
+	ctx.JSON(
+		http.StatusOK,
+		response.MultipleMemoResponseFromModel(memos))
 }
 
 func (mh memoHandler) GetSubscribedMemos(ctx *gin.Context) {

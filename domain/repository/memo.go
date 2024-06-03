@@ -7,6 +7,7 @@ type MemoRepository interface {
 	GetMemo(id string) (models.Memo, error)
 	LikeMemo(likerID string, memoID string) (models.Like, error)
 	UnlikeMemo(likerID string, memoID string) error
+	GetAllMemos(page, pageSize int) ([]models.Memo, error)
 	GetMemosByFollowing(ownerID string, page, pageSize int) ([]models.Memo, error)
 	Update(id string, updatedMemo models.Memo) (models.Memo, error)
 	Delete(id string, deletedMemo models.Memo) (models.Memo, error)

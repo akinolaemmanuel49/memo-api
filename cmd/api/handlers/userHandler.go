@@ -16,6 +16,7 @@ import (
 
 type UserHandler interface {
 	Get(ctx *gin.Context)
+	GetAll(ctx *gin.Context)
 	Update(ctx *gin.Context)
 	GetFollowers(ctx *gin.Context)
 	GetFollowing(ctx *gin.Context)
@@ -46,6 +47,61 @@ func (uh userHandler) Get(ctx *gin.Context) {
 		response.UserResponseFromModel(user),
 	)
 
+}
+
+// GetAll retrieves a list of users.
+func (uh userHandler) GetAll(ctx *gin.Context) {
+	// fetch authenticated user from context and return authentication error if no user exists
+	user := helpers.ContextGetUser(ctx)
+	if reflect.DeepEqual(user, models.User{}) {
+		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
+		return
+	}
+
+	// retrieve query params for pagination
+	pageStr := ctx.Query("page")
+	pageSizeStr := ctx.Query("pageSize")
+
+	if pageStr == "" {
+		pageStr = helpers.DefaultPage
+	}
+	if pageSizeStr == "" {
+		pageSizeStr = helpers.DefaultPageSize
+	}
+
+	// convert query strings to integers
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, errors.New("invalid value for page parameter"))
+		}
+		return
+	}
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, errors.New("invalid value for pageSize parameter"))
+		}
+		return
+	}
+
+	// retrieve list of users from database
+	followers, err := uh.app.Repositories.Users.GetAll(page, pageSize)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleInternalServerError(ctx, err)
+		}
+		return
+	}
+
+	// return fetched users
+	ctx.JSON(
+		http.StatusOK,
+		response.MultipleUserResponseFromModel(followers),
+	)
 }
 
 // Update updates and returns the profile of an authenticated user.

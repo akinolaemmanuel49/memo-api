@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"github.com/akinolaemmanuel49/memo-api/domain/repository"
 	"github.com/akinolaemmanuel49/memo-api/internal/helpers"
-	"strings"
-	"time"
 )
 
 type user struct {
@@ -191,6 +192,161 @@ func (u user) GetByEmail(email string) (models.User, error) {
 	}
 
 	return foundUser, nil
+}
+
+// GetBySearchString retrieves users matching the search string via their first name, last name, username, or email.
+// repository.ErrRecordNotFound is returned if no user matches the query.
+func (u user) GetBySearchString(searchString string) ([]models.User, error) {
+	query := `
+	SELECT 
+		id,
+		username,
+		first_name,
+		last_name,
+		email,
+		password_hash,
+		avatar,
+		status,
+		about,
+		follower_count,
+		following_count,
+		deleted,
+		is_activated,
+		created_at,
+		updated_at,
+		_version
+	FROM public.users
+	WHERE
+		first_name ILIKE $1 OR
+		last_name ILIKE $1 OR
+		username ILIKE $1 OR
+		email ILIKE $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), helpers.TimeoutDuration)
+	defer cancel()
+
+	// Use a wildcard search for the search string
+	searchPattern := "%" + searchString + "%"
+
+	rows, err := u.Db.QueryContext(ctx, query, searchPattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+			&user.AvatarURL,
+			&user.Status,
+			&user.About,
+			&user.FollowerCount,
+			&user.FollowingCount,
+			&user.Deleted,
+			&user.IsActivated,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+			&user.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if user.Deleted {
+			return nil, repository.ErrRecordDeleted
+		}
+
+		users = append(users, user)
+	}
+
+	if len(users) == 0 {
+		return nil, repository.ErrRecordNotFound
+	}
+
+	return users, nil
+}
+
+// GetAll retrieves a list of all users.
+func (u user) GetAll(page, pageSize int) ([]models.User, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	offset := (page - 1) * pageSize
+
+	query := `
+	SELECT 
+		id,
+		username,
+		first_name,
+		last_name,
+		email,
+		avatar,
+		status,
+		about,
+		follower_count,
+		following_count,
+		deleted,
+		created_at,
+		updated_at
+	FROM public.users
+	LIMIT $1 OFFSET $2
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), helpers.TimeoutDuration)
+	defer cancel()
+
+	rows, err := u.Db.QueryContext(ctx, query, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+
+		}
+	}(rows)
+
+	var users []models.User
+	for rows.Next() {
+		var follower models.User
+		err := rows.Scan(
+			&follower.ID,
+			&follower.Username,
+			&follower.FirstName,
+			&follower.LastName,
+			&follower.Email,
+			&follower.AvatarURL,
+			&follower.Status,
+			&follower.About,
+			&follower.FollowerCount,
+			&follower.FollowingCount,
+			&follower.Deleted,
+			&follower.CreatedAt,
+			&follower.UpdatedAt,
+		)
+
+		if err != nil {
+			switch {
+			default:
+				return nil, err
+			}
+		}
+		users = append(users, follower)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // GetFollowersOfUser retrieves a list of users that follow the user with matching id.

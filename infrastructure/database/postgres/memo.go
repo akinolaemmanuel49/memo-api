@@ -110,6 +110,75 @@ func (m memo) GetMemo(id string) (models.Memo, error) {
 	return foundMemo, nil
 }
 
+// GetMemosByFollowing fetches all memo instances from all users.
+func (m memo) GetAllMemos(page, pageSize int) ([]models.Memo, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	offset := (page - 1) * pageSize
+
+	// Query for all posts made by all users.
+	query := `
+	SELECT
+		id,
+		memo_content,
+		memo_type,
+		likes,
+		shares,
+		caption,
+		transcript,
+		deleted,
+		created_at,
+		updated_at,
+		owner_id
+	FROM public.memos
+	ORDER BY created_at DESC
+	LIMIT $1 OFFSET $2
+`
+
+	ctx, cancel := context.WithTimeout(context.Background(), helpers.TimeoutDuration)
+	defer cancel()
+
+	rows, err := m.Db.QueryContext(ctx, query, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}(rows)
+
+	memos := make([]models.Memo, 0)
+	for rows.Next() {
+		var memo models.Memo
+		err := rows.Scan(
+			&memo.ID,
+			&memo.Content,
+			&memo.MemoType,
+			&memo.Likes,
+			&memo.Shares,
+			&memo.Caption,
+			&memo.Transcript,
+			&memo.Deleted,
+			&memo.CreatedAt,
+			&memo.UpdatedAt,
+			&memo.OwnerID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		memos = append(memos, memo)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return memos, nil
+}
+
 // GetMemosByFollowing fetches all memo instances from followed users.
 func (m memo) GetMemosByFollowing(userID string, page, pageSize int) ([]models.Memo, error) {
 	if page < 1 {
@@ -152,7 +221,7 @@ func (m memo) GetMemosByFollowing(userID string, page, pageSize int) ([]models.M
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			return
 		}
 	}(rows)
 
