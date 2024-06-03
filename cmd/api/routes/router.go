@@ -1,10 +1,11 @@
 package routes
 
 import (
-	"github.com/akinolaemmanuel49/memo-api/memo/api/helpers"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/internal"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/helpers"
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/internal"
 )
 
 func Router(app internal.Application) *gin.Engine {

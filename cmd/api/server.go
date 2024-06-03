@@ -6,12 +6,12 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/helpers"
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/internal"
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/routes"
 	"github.com/akinolaemmanuel49/memo-api/domain/repository"
 	"github.com/akinolaemmanuel49/memo-api/infrastructure/database/postgres"
 	"github.com/akinolaemmanuel49/memo-api/infrastructure/storage"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/helpers"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/internal"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/routes"
 )
 
 // serveApp starts the server and handles its shutdown

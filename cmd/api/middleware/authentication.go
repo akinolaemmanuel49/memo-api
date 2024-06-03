@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/akinolaemmanuel49/memo-api/domain/repository"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/helpers"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/internal"
 	"github.com/gin-gonic/gin"
+
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/helpers"
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/internal"
+	"github.com/akinolaemmanuel49/memo-api/domain/repository"
 )
 
 // Authentication validates the provided access token and authenticates users.

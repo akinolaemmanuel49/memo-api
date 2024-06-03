@@ -1,8 +1,9 @@
 package response
 
 import (
-	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"time"
+
+	"github.com/akinolaemmanuel49/memo-api/domain/models"
 )
 
 type Comment struct {

@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/gin-gonic/gin"
+
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/helpers"
 	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"github.com/akinolaemmanuel49/memo-api/domain/repository"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/helpers"
-	"github.com/gin-gonic/gin"
 )
 
 // ContextUserSoftDelete checks if the instance of user

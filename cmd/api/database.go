@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/akinolaemmanuel49/memo-api/internal/helpers"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/internal"
-
 	_ "github.com/lib/pq"
+
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/internal"
+	"github.com/akinolaemmanuel49/memo-api/internal/helpers"
 )
 
 // openDB returns a new postgres connection pool.

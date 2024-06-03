@@ -1,8 +1,9 @@
 package helpers
 
 import (
-	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"github.com/gin-gonic/gin"
+
+	"github.com/akinolaemmanuel49/memo-api/domain/models"
 )
 
 type ContextKey string

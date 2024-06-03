@@ -6,12 +6,13 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
+
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/helpers"
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/internal"
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/models/response"
 	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"github.com/akinolaemmanuel49/memo-api/domain/repository"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/helpers"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/internal"
-	"github.com/akinolaemmanuel49/memo-api/memo/api/models/response"
-	"github.com/gin-gonic/gin"
 )
 
 type UserHandler interface {

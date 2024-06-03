@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/akinolaemmanuel49/memo-api/memo/api/internal"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
+	"github.com/akinolaemmanuel49/memo-api/cmd/api/internal"
 )
 
 func main() {

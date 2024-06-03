@@ -2,9 +2,10 @@ package helpers
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // HandleErrorResponse returns an error with the specified status code and message as the response.
