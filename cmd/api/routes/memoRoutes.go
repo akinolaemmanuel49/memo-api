@@ -24,6 +24,7 @@ func memoRoutes(app internal.Application, routes *gin.Engine) {
 		memo.POST("/share/:memoID", memoHandler.ShareMemo)
 		memo.POST("/unshare/:memoID", memoHandler.UnshareMemo)
 		memo.GET("/all", memoHandler.GetAllMemos)
+		memo.GET("/find", memoHandler.FindMemos)
 		memo.GET("/feed", memoHandler.GetSubscribedMemos)
 		memo.GET("/memos/:ownerID", memoHandler.GetMemosByOwnerID)
 		memo.GET("/memos/me", memoHandler.GetOwnMemos)
