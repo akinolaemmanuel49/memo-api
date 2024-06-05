@@ -298,6 +298,7 @@ func (u user) GetAll(page, pageSize int) ([]models.User, error) {
 		created_at,
 		updated_at
 	FROM public.users
+	ORDER BY created_at DESC
 	LIMIT $1 OFFSET $2
 	`
 
@@ -311,7 +312,89 @@ func (u user) GetAll(page, pageSize int) ([]models.User, error) {
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
+			return
+		}
+	}(rows)
 
+	var users []models.User
+	for rows.Next() {
+		var follower models.User
+		err := rows.Scan(
+			&follower.ID,
+			&follower.Username,
+			&follower.FirstName,
+			&follower.LastName,
+			&follower.Email,
+			&follower.AvatarURL,
+			&follower.Status,
+			&follower.About,
+			&follower.FollowerCount,
+			&follower.FollowingCount,
+			&follower.Deleted,
+			&follower.CreatedAt,
+			&follower.UpdatedAt,
+		)
+
+		if err != nil {
+			switch {
+			default:
+				return nil, err
+			}
+		}
+		users = append(users, follower)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+// FindUser retrieves a list of users that match a search string.
+func (u user) FindUser(searchString string, page, pageSize int) ([]models.User, error) {
+	if page < 1 {
+		page = 1
+	}
+
+	offset := (page - 1) * pageSize
+
+	query := `
+	SELECT 
+		id,
+		username,
+		first_name,
+		last_name,
+		email,
+		avatar,
+		status,
+		about,
+		follower_count,
+		following_count,
+		deleted,
+		created_at,
+		updated_at
+	FROM public.users
+	WHERE 
+		username ILIKE $1 OR
+		first_name ILIKE $1 OR
+		last_name ILIKE $1 OR
+		email ILIKE $1 OR
+		about ILIKE $1
+	ORDER BY created_at DESC
+	LIMIT $2 OFFSET $3
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), helpers.TimeoutDuration)
+	defer cancel()
+
+	rows, err := u.Db.QueryContext(ctx, query, searchString, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			return
 		}
 	}(rows)
 
@@ -375,6 +458,7 @@ func (u user) GetFollowersOfUser(id string, page, pageSize int) ([]models.User, 
 	FROM public.users u
 	JOIN public.follow f ON u.id = f.follower_id
 	WHERE f.subject_id = $1
+	ORDER BY updated_at DESC
 	LIMIT $2 OFFSET $3
 	`
 
@@ -388,7 +472,7 @@ func (u user) GetFollowersOfUser(id string, page, pageSize int) ([]models.User, 
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			return
 		}
 	}(rows)
 
@@ -452,6 +536,7 @@ func (u user) GetUsersFollowedBy(id string, page, pageSize int) ([]models.User, 
     FROM public.users u
     JOIN public.follow f ON u.id = f.subject_id
     WHERE f.follower_id = $1
+	ORDER BY updated_at DESC
     LIMIT $2 OFFSET $3
     `
 
@@ -465,7 +550,7 @@ func (u user) GetUsersFollowedBy(id string, page, pageSize int) ([]models.User, 
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			return
 		}
 	}(rows)
 

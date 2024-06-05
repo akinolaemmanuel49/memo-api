@@ -16,8 +16,10 @@ import (
 )
 
 type UserHandler interface {
-	Get(ctx *gin.Context)
+	Me(ctx *gin.Context)
+	GetById(ctx *gin.Context)
 	GetAll(ctx *gin.Context)
+	Find(ctx *gin.Context)
 	Update(ctx *gin.Context)
 	GetFollowers(ctx *gin.Context)
 	GetFollowing(ctx *gin.Context)
@@ -34,7 +36,7 @@ func NewUserHandler(app internal.Application) UserHandler {
 }
 
 // Get returns the profile of an authenticated user.
-func (uh userHandler) Get(ctx *gin.Context) {
+func (uh userHandler) Me(ctx *gin.Context) {
 	// fetch authenticated user from context and return authentication error if no user exists
 	user := helpers.ContextGetUser(ctx)
 	if reflect.DeepEqual(user, models.User{}) {
@@ -48,6 +50,35 @@ func (uh userHandler) Get(ctx *gin.Context) {
 		response.UserResponseFromModel(user),
 	)
 
+}
+
+// Get returns the profile of user with matching user_id.
+func (uh userHandler) GetById(ctx *gin.Context) {
+	// fetch authenticated user from context and return authentication error if no user exists
+	user := helpers.ContextGetUser(ctx)
+	if reflect.DeepEqual(user, models.User{}) {
+		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
+		return
+	}
+
+	// retrieve user id param
+	userID := ctx.Param("userID")
+
+	// retrieve matching user from the database
+	matchingUser, err := uh.app.Repositories.Users.GetById(userID)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleInternalServerError(ctx, err)
+		}
+		return
+	}
+
+	// return matching user
+	ctx.JSON(
+		http.StatusOK,
+		response.UserResponseFromModel(matchingUser),
+	)
 }
 
 // GetAll retrieves a list of users.
@@ -90,6 +121,64 @@ func (uh userHandler) GetAll(ctx *gin.Context) {
 
 	// retrieve list of users from database
 	followers, err := uh.app.Repositories.Users.GetAll(page, pageSize)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleInternalServerError(ctx, err)
+		}
+		return
+	}
+
+	// return fetched users
+	ctx.JSON(
+		http.StatusOK,
+		response.MultipleUserResponseFromModel(followers),
+	)
+}
+
+// Find retrieves all users that match the search string.
+func (uh userHandler) Find(ctx *gin.Context) {
+	// fetch authenticated user from context and return authentication error if no user exists
+	user := helpers.ContextGetUser(ctx)
+	if reflect.DeepEqual(user, models.User{}) {
+		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
+		return
+	}
+
+	// retrieve search string for query
+	searchString := ctx.Query("searchString")
+
+	// retrieve query params for pagination
+	pageStr := ctx.Query("page")
+	pageSizeStr := ctx.Query("pageSize")
+
+	if pageStr == "" {
+		pageStr = helpers.DefaultPage
+	}
+	if pageSizeStr == "" {
+		pageSizeStr = helpers.DefaultPageSize
+	}
+
+	// convert query strings to integers
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, errors.New("invalid value for page parameter"))
+		}
+		return
+	}
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		switch {
+		default:
+			helpers.HandleErrorResponse(ctx, http.StatusBadRequest, errors.New("invalid value for pageSize parameter"))
+		}
+		return
+	}
+
+	// retrieve list of users from database
+	followers, err := uh.app.Repositories.Users.FindUser(searchString, page, pageSize)
 	if err != nil {
 		switch {
 		default:
