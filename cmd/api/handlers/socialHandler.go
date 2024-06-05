@@ -20,6 +20,7 @@ import (
 type SocialHandler interface {
 	Follow(ctx *gin.Context)
 	Unfollow(ctx *gin.Context)
+	IsFollower(ctx *gin.Context)
 	CreateTextComment(ctx *gin.Context)
 	CreateTextReply(ctx *gin.Context)
 	GetComments(ctx *gin.Context)
@@ -141,6 +142,40 @@ func (sh socialHandler) Unfollow(ctx *gin.Context) {
 			"username":     unfollowedUser.Username,
 			"unfollowedAt": newUnfollow.CreatedAt,
 		},
+	}
+
+	ctx.JSON(
+		http.StatusOK,
+		responseMessage,
+	)
+}
+
+// IsFollower checks if the authenticated user is following another user.
+func (sh socialHandler) IsFollower(ctx *gin.Context) {
+	// Fetch authenticated user from context and return authentication error if no user exists
+	user := helpers.ContextGetUser(ctx)
+
+	if reflect.DeepEqual(user, models.User{}) {
+		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
+		return
+	}
+
+	subjectID := ctx.Param("subjectID")
+	if subjectID == user.ID {
+		helpers.HandleErrorResponse(ctx, http.StatusBadRequest, repository.ErrCheckFollow)
+		return
+	}
+
+	// Check if the user is following the subject
+	isFollower, err := sh.app.Repositories.Social.IsFollower(user.ID, subjectID)
+	if err != nil {
+		helpers.HandleInternalServerError(ctx, err)
+		return
+	}
+
+	responseMessage := gin.H{
+		"status":     "success",
+		"isFollower": isFollower,
 	}
 
 	ctx.JSON(

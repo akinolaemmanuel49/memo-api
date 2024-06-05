@@ -13,8 +13,9 @@ func socialRoutes(app internal.Application, routes *gin.Engine) {
 	social := routes.Group("/social")
 	social.Use(middleware.Authentication(app), middleware.ContextUserSoftDelete())
 	{
-		social.POST("/follow", socialHandler.Follow)
-		social.POST("/unfollow", socialHandler.Unfollow)
+		social.POST("/follow/:subjectID", socialHandler.Follow)
+		social.POST("/unfollow/:subjectID", socialHandler.Unfollow)
+		social.GET("/follows/:subjectID", socialHandler.IsFollower)
 		social.POST("/comment/:memoID", socialHandler.CreateTextComment)
 		social.POST("/comment/reply/:memoID/:parentID", socialHandler.CreateTextReply)
 		social.GET("/reply/:commentID/replies", socialHandler.GetReplies)

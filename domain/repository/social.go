@@ -5,6 +5,7 @@ import "github.com/akinolaemmanuel49/memo-api/domain/models"
 type SocialRepository interface {
 	Follow(followerID, subjectID string) (models.Follow, error)
 	Unfollow(followerID, subjectID string) (models.Follow, error)
+	IsFollower(followerID, subjectID string) (bool, error) // A isFollower of B
 	CreateComment(comment *models.Comment) (models.Comment, error)
 	GetComment(commentID string) (models.Comment, error)
 	UpdateComment(commentID string, updatedComment models.Comment) (models.Comment, error)

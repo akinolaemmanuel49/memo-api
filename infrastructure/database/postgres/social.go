@@ -105,6 +105,28 @@ func (s social) Unfollow(followerID, subjectID string) (models.Follow, error) {
 	return newUnfollow, nil
 }
 
+// IsFollower checks if a user is the follower of a subject using their ids.
+func (s social) IsFollower(followerID, subjectID string) (bool, error) {
+	query := `
+    SELECT EXISTS(
+        SELECT 1
+        FROM public.follow
+        WHERE follower_id = $1 AND subject_id = $2
+    )`
+
+	ctx, cancel := context.WithTimeout(context.Background(), helpers.TimeoutDuration)
+	defer cancel()
+
+	var exists bool
+	err := s.Db.QueryRowContext(ctx, query, followerID, subjectID).Scan(&exists)
+
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 // UpdateFollowerCount updates the FollowerCount for a given user by a specified increment.
 func (s social) updateFollowerCount(userID string, increment int) error {
 	query := `
