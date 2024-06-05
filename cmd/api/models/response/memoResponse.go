@@ -7,32 +7,32 @@ import (
 )
 
 type Memo struct {
-	ID         string    `json:"id,omitempty"`
-	MemoType   string    `json:"memo_type"`
-	Content    string    `json:"content"`
-	Likes      int64     `json:"likes,omitempty"`
-	Shares     int64     `json:"shares,omitempty"`
-	Caption    string    `json:"caption,omitempty"`
-	Transcript string    `json:"transcript,omitempty"`
-	Deleted    bool      `json:"deleted,omitempty"`
-	CreatedAt  time.Time `json:"created_at,omitempty"`
-	UpdatedAt  time.Time `json:"updated_at,omitempty"`
-	OwnerID    string    `json:"owner_id,omitempty"`
+	ID          string    `json:"id,omitempty"`
+	Type        string    `json:"type"`
+	Content     string    `json:"content"`
+	Likes       int64     `json:"likes,omitempty"`
+	Shares      int64     `json:"shares,omitempty"`
+	ResourceURL string    `json:"resource_url,omitempty"`
+	Description string    `json:"description,omitempty"`
+	Deleted     bool      `json:"deleted,omitempty"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	UpdatedAt   time.Time `json:"updated_at,omitempty"`
+	OwnerID     string    `json:"owner_id,omitempty"`
 }
 
 func MemoResponseFromModel(memo models.Memo) Memo {
 	return Memo{
-		ID:         memo.ID,
-		MemoType:   memo.MemoType,
-		Content:    memo.Content,
-		Likes:      memo.Likes,
-		Shares:     memo.Shares,
-		Caption:    memo.Caption,
-		Transcript: memo.Transcript,
-		Deleted:    memo.Deleted,
-		CreatedAt:  memo.CreatedAt,
-		UpdatedAt:  memo.UpdatedAt,
-		OwnerID:    memo.OwnerID,
+		ID:          memo.ID,
+		Type:        memo.Type,
+		Content:     memo.Content,
+		Likes:       memo.Likes,
+		Shares:      memo.Shares,
+		ResourceURL: memo.ResourceURL,
+		Description: memo.Description,
+		Deleted:     memo.Deleted,
+		CreatedAt:   memo.CreatedAt,
+		UpdatedAt:   memo.UpdatedAt,
+		OwnerID:     memo.OwnerID,
 	}
 }
 

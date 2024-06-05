@@ -23,7 +23,7 @@ func NewMemoInfrastructure(db *sql.DB) repository.MemoRepository {
 // it returns an error if ownerID is not set.
 func (m memo) CreateMemo(ownerID string, memo *models.Memo) (models.Memo, error) {
 	query := `
-	INSERT INTO public.memos(memo_content, owner_id, memo_type, caption, transcript)
+	INSERT INTO public.memos(content, owner_id, type, resource_url, description)
 	VALUES($1, $2, $3, $4, $5)
 	RETURNING id, created_at, updated_at
 	`
@@ -37,9 +37,9 @@ func (m memo) CreateMemo(ownerID string, memo *models.Memo) (models.Memo, error)
 		query,
 		memo.Content,
 		ownerID,
-		memo.MemoType,
-		memo.Caption,
-		memo.Transcript,
+		memo.Type,
+		memo.ResourceURL,
+		memo.Description,
 	).Scan(&newMemo.ID, &newMemo.CreatedAt, &newMemo.UpdatedAt)
 
 	if err != nil {
@@ -58,12 +58,12 @@ func (m memo) GetMemo(id string) (models.Memo, error) {
 	query := `
 	SELECT
 		id,
-		memo_content,
-		memo_type,
+		content,
+		type,
 		likes,
 		shares,
-		caption,
-		transcript,
+		resource_url,
+		description,
 		deleted,
 		created_at,
 		updated_at,
@@ -81,11 +81,11 @@ func (m memo) GetMemo(id string) (models.Memo, error) {
 		Scan(
 			&foundMemo.ID,
 			&foundMemo.Content,
-			&foundMemo.MemoType,
+			&foundMemo.Type,
 			&foundMemo.Likes,
 			&foundMemo.Shares,
-			&foundMemo.Caption,
-			&foundMemo.Transcript,
+			&foundMemo.ResourceURL,
+			&foundMemo.Description,
 			&foundMemo.Deleted,
 			&foundMemo.CreatedAt,
 			&foundMemo.UpdatedAt,
@@ -122,12 +122,12 @@ func (m memo) GetAllMemos(page, pageSize int) ([]models.Memo, error) {
 	query := `
 	SELECT
 		id,
-		memo_content,
-		memo_type,
+		content,
+		type,
 		likes,
 		shares,
-		caption,
-		transcript,
+		resource_url,
+		description,
 		deleted,
 		created_at,
 		updated_at,
@@ -157,11 +157,11 @@ func (m memo) GetAllMemos(page, pageSize int) ([]models.Memo, error) {
 		err := rows.Scan(
 			&memo.ID,
 			&memo.Content,
-			&memo.MemoType,
+			&memo.Type,
 			&memo.Likes,
 			&memo.Shares,
-			&memo.Caption,
-			&memo.Transcript,
+			&memo.ResourceURL,
+			&memo.Description,
 			&memo.Deleted,
 			&memo.CreatedAt,
 			&memo.UpdatedAt,
@@ -190,21 +190,18 @@ func (m memo) FindMemos(searchString string, page, pageSize int) ([]models.Memo,
 	query := `
 	SELECT
 		id,
-		memo_content,
-		memo_type,
+		content,
+		type,
 		likes,
 		shares,
-		caption,
-		transcript,
+		resource_url,
+		description,
 		deleted,
 		created_at,
 		updated_at,
 		owner_id
 	FROM public.memos
-	WHERE 
-		(memo_type IN ('image', 'audio', 'video') AND caption ILIKE $1)
-		OR
-		(memo_type = 'text' AND memo_content ILIKE $1)
+	WHERE content ILIKE $1
 	ORDER BY created_at DESC
 	LIMIT $2 OFFSET $3
 	`
@@ -229,11 +226,11 @@ func (m memo) FindMemos(searchString string, page, pageSize int) ([]models.Memo,
 		err := rows.Scan(
 			&memo.ID,
 			&memo.Content,
-			&memo.MemoType,
+			&memo.Type,
 			&memo.Likes,
 			&memo.Shares,
-			&memo.Caption,
-			&memo.Transcript,
+			&memo.ResourceURL,
+			&memo.Description,
 			&memo.Deleted,
 			&memo.CreatedAt,
 			&memo.UpdatedAt,
@@ -263,12 +260,12 @@ func (m memo) GetMemosByFollowing(userID string, page, pageSize int) ([]models.M
 	query := `
 	SELECT
 		id,
-		memo_content,
-		memo_type,
+		content,
+		type,
 		likes,
 		shares,
-		caption,
-		transcript,
+		resource_url,
+		description,
 		deleted,
 		created_at,
 		updated_at,
@@ -303,11 +300,11 @@ func (m memo) GetMemosByFollowing(userID string, page, pageSize int) ([]models.M
 		err := rows.Scan(
 			&memo.ID,
 			&memo.Content,
-			&memo.MemoType,
+			&memo.Type,
 			&memo.Likes,
 			&memo.Shares,
-			&memo.Caption,
-			&memo.Transcript,
+			&memo.ResourceURL,
+			&memo.Description,
 			&memo.Deleted,
 			&memo.CreatedAt,
 			&memo.UpdatedAt,
@@ -486,7 +483,7 @@ func (m memo) Update(id string, updatedMemo models.Memo) (models.Memo, error) {
 	updateQuery := `
 	UPDATE public.memos
 		SET
-		    memo_content = $1,
+		    resource_url = $1,
 		    updated_at = $2,
 		    _version = _version + 1
 		WHERE id = $3 AND _version=$4;`
@@ -522,7 +519,7 @@ func (m memo) Update(id string, updatedMemo models.Memo) (models.Memo, error) {
 	// Update memo instance
 	_, err = tx.ExecContext(ctx,
 		updateQuery,
-		updatedMemo.Content,
+		updatedMemo.ResourceURL,
 		time.Now().UTC(),
 		id,
 		updatedMemo.Version)
@@ -623,12 +620,12 @@ func (m memo) GetMemosByOwnerID(ownerID string, page, pageSize int) ([]models.Me
 	query := `
 	SELECT
 		id,
-		memo_content,
-		memo_type,
+		content,
+		type,
 		likes,
 		shares,
-		caption,
-		transcript,
+		resource_url,
+		description,
 		deleted,
 		created_at,
 		updated_at,
@@ -649,7 +646,7 @@ func (m memo) GetMemosByOwnerID(ownerID string, page, pageSize int) ([]models.Me
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			return
 		}
 	}(rows)
 
@@ -659,11 +656,11 @@ func (m memo) GetMemosByOwnerID(ownerID string, page, pageSize int) ([]models.Me
 		err := rows.Scan(
 			&memo.ID,
 			&memo.Content,
-			&memo.MemoType,
+			&memo.Type,
 			&memo.Likes,
 			&memo.Shares,
-			&memo.Caption,
-			&memo.Transcript,
+			&memo.ResourceURL,
+			&memo.Description,
 			&memo.Deleted,
 			&memo.CreatedAt,
 			&memo.UpdatedAt,

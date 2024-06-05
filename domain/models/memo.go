@@ -3,18 +3,18 @@ package models
 import "time"
 
 type Memo struct {
-	ID         string
-	MemoType   string
-	Content    string
-	Likes      int64
-	Shares     int64
-	Caption    string
-	Transcript string
-	Deleted    bool
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	OwnerID    string
-	Version    int
+	ID          string
+	Type        string
+	Content     string
+	ResourceURL string
+	Description string
+	Likes       int64
+	Shares      int64
+	Deleted     bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	OwnerID     string
+	Version     int
 }
 
 type Like struct {

@@ -13,10 +13,7 @@ func memoRoutes(app internal.Application, routes *gin.Engine) {
 	memo := routes.Group("/memo")
 	memo.Use(middleware.Authentication(app), middleware.ContextUserSoftDelete())
 	{
-		memo.POST("/text", memoHandler.CreateTextMemo)
-		memo.POST("/image", memoHandler.CreateImageMemo)
-		memo.POST("/video", memoHandler.CreateVideoMemo)
-		memo.POST("/audio", memoHandler.CreateAudioMemo)
+		memo.POST("/:memoType", memoHandler.CreateMemo)
 		memo.GET("/:memoID", memoHandler.GetMemo)
 		memo.DELETE("/:memoID", memoHandler.DeleteMemo)
 		memo.POST("/like/:memoID", memoHandler.LikeMemo)

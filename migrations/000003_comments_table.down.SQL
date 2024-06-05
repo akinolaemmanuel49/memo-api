@@ -1,2 +1,2 @@
-DROP TABLE public.follow;
+DROP TABLE public.comments;
 DROP EXTENSION IF EXISTS "uuid-ossp";

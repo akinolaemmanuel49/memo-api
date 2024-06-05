@@ -17,7 +17,7 @@ import (
 // using the memoID as the file name.
 // The HTTPS URL of the uploaded media is returned if no error is encountered.
 // repository.ErrUnapprovedFileType is return if an unsupported file is uploaded.
-func (f file) UploadMemoMedia(memoID string, memoFile io.Reader, typeMedia string) (memoURL string, err error) {
+func (f file) UploadMemoMedia(memoID string, resourceFile io.Reader, typeMedia string) (resourceURL string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), helpers.UploadTimeoutDuration)
 	defer cancel()
 
@@ -43,7 +43,7 @@ func (f file) UploadMemoMedia(memoID string, memoFile io.Reader, typeMedia strin
 
 	res, err := cld.Upload.Upload(
 		ctx,
-		memoFile,
+		resourceFile,
 		uploader.UploadParams{
 			PublicID:       memoID,
 			ResourceType:   typeMedia,

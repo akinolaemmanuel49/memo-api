@@ -2,26 +2,22 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 
 	"github.com/akinolaemmanuel49/memo-api/cmd/api/helpers"
 	"github.com/akinolaemmanuel49/memo-api/cmd/api/internal"
-	"github.com/akinolaemmanuel49/memo-api/cmd/api/models/request"
 	"github.com/akinolaemmanuel49/memo-api/cmd/api/models/response"
 	"github.com/akinolaemmanuel49/memo-api/domain/models"
 	"github.com/akinolaemmanuel49/memo-api/domain/repository"
 )
 
 type MemoHandler interface {
-	CreateTextMemo(ctx *gin.Context)
-	CreateImageMemo(ctx *gin.Context)
-	CreateVideoMemo(ctx *gin.Context)
-	CreateAudioMemo(ctx *gin.Context)
+	CreateMemo(ctx *gin.Context)
 	GetMemo(ctx *gin.Context)
 	DeleteMemo(ctx *gin.Context)
 	LikeMemo(ctx *gin.Context)
@@ -43,8 +39,8 @@ func NewMemoHandler(app internal.Application) MemoHandler {
 	return memoHandler{app: app}
 }
 
-// CreateTextMemo creates a new instance of a text based memo.
-func (mh memoHandler) CreateTextMemo(ctx *gin.Context) {
+// CreateMemo creates a new instance of a memo.
+func (mh memoHandler) CreateMemo(ctx *gin.Context) {
 	// Fetch authenticated user from context and return authentication error if no user exists
 	user := helpers.ContextGetUser(ctx)
 
@@ -53,69 +49,22 @@ func (mh memoHandler) CreateTextMemo(ctx *gin.Context) {
 		return
 	}
 
-	requestBody := request.TextMemo{}
-	if err := ctx.ShouldBindJSON(&requestBody); err != nil {
-		helpers.HandleErrorResponse(ctx, http.StatusBadRequest, err)
-		return
-	}
-
-	err := requestBody.ValidateRequired(
-		request.TextMemoFieldContent)
-
-	if err != nil {
-		helpers.HandleValidationError(ctx, err)
-		return
-	}
-
-	validate := validator.New()
-	if err := validate.Struct(requestBody); err != nil {
-		helpers.HandleValidationError(ctx, err)
-		return
-	}
-
-	// convert request to text memo model
-	textMemo := requestBody.ToModel()
-	textMemo.OwnerID = user.ID
-	textMemo.MemoType = "text"
-
-	// attempt to save text memo in repository
-	newTextMemo, err := mh.app.Repositories.Memo.CreateMemo(user.ID, &textMemo)
-	if err != nil {
-		switch {
-		default:
-			helpers.HandleInternalServerError(ctx, err)
-		}
-		return
-	}
-
-	// return newly created text memo
-	ctx.JSON(
-		http.StatusCreated,
-		response.MemoResponseFromModel(newTextMemo),
-	)
-}
-
-// CreateImageMemo creates a new instance of an image based memo.
-func (mh memoHandler) CreateImageMemo(ctx *gin.Context) {
-	// Fetch authenticated user from context and return authentication error if no user exists
-	user := helpers.ContextGetUser(ctx)
-
-	if reflect.DeepEqual(user, models.User{}) {
-		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
-		return
-	}
+	// Parse URL params to get memo type
+	memoType := ctx.Param("memoType")
 
 	// Validate request data
-	caption := ctx.PostForm("caption")
+	content := ctx.PostForm("content")
+	description := ctx.PostForm("description")
 
-	imageMemo := models.Memo{
-		OwnerID:  user.ID,
-		MemoType: "image",
-		Caption:  caption,
+	memo := models.Memo{
+		OwnerID:     user.ID,
+		Type:        memoType,
+		Content:     content,
+		Description: description,
 	}
 
-	// attempt to save image memo in repository
-	newImageMemo, err := mh.app.Repositories.Memo.CreateMemo(user.ID, &imageMemo)
+	// Attempt to save memo in repository
+	newMemo, err := mh.app.Repositories.Memo.CreateMemo(user.ID, &memo)
 	if err != nil {
 		switch {
 		default:
@@ -125,13 +74,13 @@ func (mh memoHandler) CreateImageMemo(ctx *gin.Context) {
 	}
 
 	// Process the file provided with the form as the new storage of the memo
-	var memoURL string
-	memoFile, _, err := ctx.Request.FormFile("memoFile")
+	var resourceURL string
+	resourceFile, _, err := ctx.Request.FormFile("resourceFile")
 	if err != nil {
 		switch {
 		case errors.Is(err, http.ErrMissingFile):
-			// When no file is provided with the form set memoURL to ""
-			memoURL = ""
+			// When no file is provided with the form set resourceURL to ""
+			resourceURL = ""
 		default:
 			helpers.HandleInternalServerError(ctx, err)
 			return
@@ -139,7 +88,7 @@ func (mh memoHandler) CreateImageMemo(ctx *gin.Context) {
 	} else {
 		// When a file is provided with the form, attempt to upload it as the memo's new storage
 		// and update the memoURL to be saved as part of the memo
-		memoURL, err = mh.app.Repositories.File.UploadMemoMedia(newImageMemo.ID, memoFile, newImageMemo.MemoType)
+		resourceURL, err = mh.app.Repositories.File.UploadMemoMedia(newMemo.ID, resourceFile, newMemo.Type)
 		if err != nil {
 			switch {
 			case errors.Is(err, repository.ErrUnapprovedFileType):
@@ -151,9 +100,13 @@ func (mh memoHandler) CreateImageMemo(ctx *gin.Context) {
 		}
 	}
 
-	newImageMemo.Content = memoURL
+	newMemo.ResourceURL = resourceURL
+	fmt.Println("BIG BAD WOLF 1")
+	fmt.Println(newMemo.ResourceURL)
 
-	updatedMemo, err := mh.app.Repositories.Memo.Update(newImageMemo.ID, newImageMemo)
+	updatedMemo, err := mh.app.Repositories.Memo.Update(newMemo.ID, newMemo)
+	fmt.Println("BIG BAD WOLF 2")
+	fmt.Println(updatedMemo.ResourceURL)
 	if err != nil {
 		helpers.HandleInternalServerError(ctx, err)
 		return
@@ -161,164 +114,12 @@ func (mh memoHandler) CreateImageMemo(ctx *gin.Context) {
 
 	data := response.MemoResponseFromModel(updatedMemo)
 
-	// return newly create image memo
+	// return newly created memo
 	ctx.JSON(
 		http.StatusCreated,
 		gin.H{
 			"data":    data,
-			"message": `Image memo was successfully created.`,
-		},
-	)
-}
-
-// CreateVideoMemo creates a new instance of a video based memo.
-func (mh memoHandler) CreateVideoMemo(ctx *gin.Context) {
-	// Fetch authenticated user from context and return authentication error if no user exists
-	user := helpers.ContextGetUser(ctx)
-
-	if reflect.DeepEqual(user, models.User{}) {
-		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
-		return
-	}
-
-	// Validate request data
-	caption := ctx.PostForm("caption")
-
-	videoMemo := models.Memo{
-		OwnerID:  user.ID,
-		MemoType: "video",
-		Caption:  caption,
-	}
-
-	// attempt to save video memo in repository
-	newVideoMemo, err := mh.app.Repositories.Memo.CreateMemo(user.ID, &videoMemo)
-	if err != nil {
-		switch {
-		default:
-			helpers.HandleInternalServerError(ctx, err)
-		}
-		return
-	}
-
-	// Process the file provided with the form as the new storage of the memo
-	var memoURL string
-	memoFile, _, err := ctx.Request.FormFile("memoFile")
-	if err != nil {
-		switch {
-		case errors.Is(err, http.ErrMissingFile):
-			// When no file is provided with the form set memoURL to ""
-			memoURL = ""
-		default:
-			helpers.HandleInternalServerError(ctx, err)
-			return
-		}
-	} else {
-		// When a file is provided with the form, attempt to upload it as the memo's new storage
-		// and update the memoURL to be saved as part of the memo
-		memoURL, err = mh.app.Repositories.File.UploadMemoMedia(newVideoMemo.ID, memoFile, newVideoMemo.MemoType)
-		if err != nil {
-			switch {
-			case errors.Is(err, repository.ErrUnapprovedFileType):
-				helpers.HandleValidationError(ctx, err)
-			default:
-				helpers.HandleInternalServerError(ctx, err)
-			}
-			return
-		}
-	}
-
-	newVideoMemo.Content = memoURL
-
-	updatedMemo, err := mh.app.Repositories.Memo.Update(newVideoMemo.ID, newVideoMemo)
-	if err != nil {
-		helpers.HandleInternalServerError(ctx, err)
-		return
-	}
-
-	data := response.MemoResponseFromModel(updatedMemo)
-
-	// return newly create video memo
-	ctx.JSON(
-		http.StatusCreated,
-		gin.H{
-			"data":    data,
-			"message": `Video memo was successfully created.`,
-		},
-	)
-}
-
-// CreateAudioMemo creates a new instance of an audio based memo.
-func (mh memoHandler) CreateAudioMemo(ctx *gin.Context) {
-	// Fetch authenticated user from context and return authentication error if no user exists
-	user := helpers.ContextGetUser(ctx)
-
-	if reflect.DeepEqual(user, models.User{}) {
-		helpers.HandleErrorResponse(ctx, http.StatusUnauthorized, errors.New("unauthenticated"))
-		return
-	}
-
-	// Validate request data
-	caption := ctx.PostForm("caption")
-
-	audioMemo := models.Memo{
-		OwnerID:  user.ID,
-		MemoType: "audio",
-		Caption:  caption,
-	}
-
-	// attempt to save audio memo in repository
-	newAudioMemo, err := mh.app.Repositories.Memo.CreateMemo(user.ID, &audioMemo)
-	if err != nil {
-		switch {
-		default:
-			helpers.HandleInternalServerError(ctx, err)
-		}
-		return
-	}
-
-	// Process the file provided with the form as the new storage of the memo
-	var memoURL string
-	memoFile, _, err := ctx.Request.FormFile("memoFile")
-	if err != nil {
-		switch {
-		case errors.Is(err, http.ErrMissingFile):
-			// When no file is provided with the form set memoURL to ""
-			memoURL = ""
-		default:
-			helpers.HandleInternalServerError(ctx, err)
-			return
-		}
-	} else {
-		// When a file is provided with the form, attempt to upload it as the memo's new storage
-		// and update the memoURL to be saved as part of the memo
-		memoURL, err = mh.app.Repositories.File.UploadMemoMedia(newAudioMemo.ID, memoFile, newAudioMemo.MemoType)
-		if err != nil {
-			switch {
-			case errors.Is(err, repository.ErrUnapprovedFileType):
-				helpers.HandleValidationError(ctx, err)
-			default:
-				helpers.HandleInternalServerError(ctx, err)
-			}
-			return
-		}
-	}
-
-	newAudioMemo.Content = memoURL
-
-	updatedMemo, err := mh.app.Repositories.Memo.Update(newAudioMemo.ID, newAudioMemo)
-	if err != nil {
-		helpers.HandleInternalServerError(ctx, err)
-		return
-	}
-
-	data := response.MemoResponseFromModel(updatedMemo)
-
-	// return newly create audio memo
-	ctx.JSON(
-		http.StatusCreated,
-		gin.H{
-			"data":    data,
-			"message": `Audio memo was successfully created.`,
+			"message": `Memo was successfully created.`,
 		},
 	)
 }
@@ -686,7 +487,7 @@ func (mh memoHandler) DeleteMemo(ctx *gin.Context) {
 		}
 		return
 	}
-	if memo.MemoType != "text" {
+	if memo.Type != "text" {
 		err = mh.app.Repositories.File.DeleteMemoMedia(memoID)
 		if err != nil {
 			helpers.HandleInternalServerError(ctx, err)
